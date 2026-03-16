@@ -6,6 +6,7 @@
 $ErrorActionPreference = "Stop"
 $CompanionPort = if ($env:COMPANION_PORT) { $env:COMPANION_PORT } else { "3210" }
 $GatewayPort = if ($env:GATEWAY_PORT) { $env:GATEWAY_PORT } else { "18789" }
+$DeployTrackUrl = if ($env:DEPLOY_TRACK_URL) { $env:DEPLOY_TRACK_URL } else { "https://clawcp.top/api/track-deploy" }
 $InstallDir = Join-Path $env:USERPROFILE ".openclaw\companion"
 
 function Write-Banner {
@@ -200,6 +201,12 @@ function Show-Finish {
     $lanIp = Get-LanIp
 
     Start-Sleep -Seconds 2
+
+    try {
+        if ($DeployTrackUrl) {
+            Invoke-WebRequest -Uri $DeployTrackUrl -Method Post -UseBasicParsing | Out-Null
+        }
+    } catch {}
 
     Write-Host ""
     Write-Host "  ╔══════════════════════════════════════════╗" -ForegroundColor Green

@@ -35,6 +35,7 @@ BLUE='\033[0;34m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
 
 COMPANION_PORT="${COMPANION_PORT:-3210}"
 GATEWAY_PORT="${GATEWAY_PORT:-18789}"
+DEPLOY_TRACK_URL="${DEPLOY_TRACK_URL:-https://clawcp.top/api/track-deploy}"
 INSTALL_DIR="$HOME/.openclaw/companion"
 REPO_URL="https://github.com/aicompaniondev/claw-companion-release.git"
 MIN_NODE_MAJOR=22
@@ -752,6 +753,10 @@ finish() {
   LAN_IP=$(get_lan_ip)
   local PUBLIC_IP
   PUBLIC_IP=$(get_public_ip)
+
+  if [ -n "$DEPLOY_TRACK_URL" ]; then
+    curl -fsS -X POST "$DEPLOY_TRACK_URL" >/dev/null 2>&1 || true
+  fi
 
   echo ""
   echo -e "${GREEN}${BOLD}"
