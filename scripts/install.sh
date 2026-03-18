@@ -416,39 +416,27 @@ install_clawdbot() {
 install_companion() {
   step "安装 Claw伴侣 管理面板"
 
-  # 清理旧安装
-  if [ -d "$INSTALL_DIR" ]; then
-    rm -rf "$INSTALL_DIR"
-    info "已清理旧安装"
+  if [ -f "$HOME/.openclaw/site/scripts/release-install.sh" ]; then
+    info "检测到本地 release-install.sh，使用 release 包安装..."
+    INSTALL_DIR="$INSTALL_DIR" COMPANION_PORT="$COMPANION_PORT" GATEWAY_PORT="$GATEWAY_PORT" \
+      bash "$HOME/.openclaw/site/scripts/release-install.sh"
+    return 0
   fi
 
-  # 判断是本地安装还是远程安装
-  local SCRIPT_DIR SOURCE_DIR
-  SCRIPT_DIR="$(cd "$(dirname "$0")" 2>/dev/null && pwd)" || SCRIPT_DIR=""
-  SOURCE_DIR="$(dirname "$SCRIPT_DIR" 2>/dev/null)" || SOURCE_DIR=""
-
-  if [ -n "$SOURCE_DIR" ] && [ -f "$SOURCE_DIR/server/index.js" ] && [ -d "$SOURCE_DIR/.git" ]; then
-    cp -r "$SOURCE_DIR/." "$INSTALL_DIR/"
-    info "本地文件已复制到 $INSTALL_DIR"
-  else
-    info "从镜像获取项目..."
-    if download_repo_archive "$INSTALL_DIR"; then
-      info "压缩包下载完成"
-    else
-      warn "压缩包下载失败，尝试 git 克隆..."
-      ensure_git
-      if ! git_clone_with_mirrors "$INSTALL_DIR" "${REPO_MIRRORS[@]}"; then
-        error "Git 克隆失败，请检查网络"
-        exit 1
-      fi
-      info "克隆完成"
-    fi
+  local TMP_RELEASE_INSTALL="/tmp/claw-release-install-$$.sh"
+  info "下载 release-install.sh ..."
+  if curl -fsSL --connect-timeout 10 --max-time 120 \
+    "https://raw.githubusercontent.com/aicompaniondev/claw-companion-release/main/scripts/release-install.sh" \
+    -o "$TMP_RELEASE_INSTALL"; then
+    chmod +x "$TMP_RELEASE_INSTALL"
+    INSTALL_DIR="$INSTALL_DIR" COMPANION_PORT="$COMPANION_PORT" GATEWAY_PORT="$GATEWAY_PORT" \
+      bash "$TMP_RELEASE_INSTALL"
+    rm -f "$TMP_RELEASE_INSTALL" 2>/dev/null || true
+    return 0
   fi
 
-  cd "$INSTALL_DIR/server" || { error "安装目录异常"; exit 1; }
-  set_npm_mirror_env
-  npm --registry "$NPM_REGISTRY" install --omit=dev < /dev/null 2>&1 | tail -2
-  info "依赖安装完成"
+  error "无法获取 release-install.sh，请检查网络"
+  exit 1
 }
 
 # ======================== 创建 Gateway 系统服务 ========================
