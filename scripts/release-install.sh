@@ -98,54 +98,54 @@ ensure_swap_if_needed() {
 }
 
 install_linux() {
-  local tmp_dir api json tag asset_name sha_name asset_url sha_url tarball shafile expected actual backup node_path ip companion_ver
-  tmp_dir=$(mktemp -d)
-  trap 'rm -rf "$tmp_dir"' EXIT
+  local TMP_DIR API JSON TAG ASSET_NAME SHA_NAME ASSET_URL SHA_URL TARBALL SHAFILE EXPECTED ACTUAL BACKUP NODE_PATH IP COMPANION_VER
+  TMP_DIR=$(mktemp -d)
+  trap 'rm -rf "$TMP_DIR"' EXIT
 
-  api="https://api.github.com/repos/${RELEASE_REPO}/releases/latest"
-  log "Fetching latest release: $api"
-  json=$(curl -fsSL -H "Accept: application/vnd.github+json" "$api")
+  API="https://api.github.com/repos/${RELEASE_REPO}/releases/latest"
+  log "Fetching latest release: $API"
+  JSON=$(curl -fsSL -H "Accept: application/vnd.github+json" "$API")
 
-  tag=$(echo "$json" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);console.log(j.tag_name||'');});")
-  [ -n "$tag" ] || { err "无法解析 latest release tag"; exit 1; }
+  TAG=$(echo "$JSON" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);console.log(j.tag_name||'');});")
+  [ -n "$TAG" ] || { err "无法解析 latest release tag"; exit 1; }
 
-  asset_name="claw-companion-${tag}.tar.gz"
-  sha_name="${asset_name}.sha256"
+  ASSET_NAME="claw-companion-${TAG}.tar.gz"
+  SHA_NAME="${ASSET_NAME}.sha256"
 
-  asset_url=$(echo "$json" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);const a=(j.assets||[]).find(x=>x.name==='${asset_name}');console.log(a?a.browser_download_url:'');});")
-  sha_url=$(echo "$json" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);const a=(j.assets||[]).find(x=>x.name==='${sha_name}');console.log(a?a.browser_download_url:'');});")
+  ASSET_URL=$(echo "$JSON" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);const a=(j.assets||[]).find(x=>x.name==='${ASSET_NAME}');console.log(a?a.browser_download_url:'');});")
+  SHA_URL=$(echo "$JSON" | node -e "let s='';process.stdin.on('data',d=>s+=d).on('end',()=>{const j=JSON.parse(s);const a=(j.assets||[]).find(x=>x.name==='${SHA_NAME}');console.log(a?a.browser_download_url:'');});")
 
-  [ -n "$asset_url" ] || { err "未找到 release asset: $asset_name"; exit 1; }
-  [ -n "$sha_url" ] || { err "未找到 release asset: $sha_name"; exit 1; }
+  [ -n "$ASSET_URL" ] || { err "未找到 release asset: $ASSET_NAME"; exit 1; }
+  [ -n "$SHA_URL" ] || { err "未找到 release asset: $SHA_NAME"; exit 1; }
 
-  tarball="$tmp_dir/$asset_name"
-  shafile="$tmp_dir/$sha_name"
+  TARBALL="$TMP_DIR/$ASSET_NAME"
+  SHAFILE="$TMP_DIR/$SHA_NAME"
 
   log "Downloading tarball..."
-  curl -fsSL -L "$asset_url" -o "$tarball"
+  curl -fsSL -L "$ASSET_URL" -o "$TARBALL"
   log "Downloading checksum..."
-  curl -fsSL -L "$sha_url" -o "$shafile"
+  curl -fsSL -L "$SHA_URL" -o "$SHAFILE"
 
-  expected=$(awk '{print $1}' "$shafile" | tr -d '\r\n')
-  actual=$(sha256_file "$tarball")
-  [ "$expected" = "$actual" ] || { err "Checksum mismatch expected=$expected actual=$actual"; exit 1; }
+  EXPECTED=$(awk '{print $1}' "$SHAFILE" | tr -d '\r\n')
+  ACTUAL=$(sha256_file "$TARBALL")
+  [ "$EXPECTED" = "$ACTUAL" ] || { err "Checksum mismatch expected=$EXPECTED actual=$ACTUAL"; exit 1; }
 
   systemctl stop "$SERVICE_NAME" >/dev/null 2>&1 || true
 
   if [ -d "$INSTALL_DIR" ]; then
-    backup="${INSTALL_DIR}.bak.$(date +%Y%m%d-%H%M%S)"
-    log "Backing up ${INSTALL_DIR} -> ${backup}"
-    mv "$INSTALL_DIR" "$backup"
+    BACKUP="${INSTALL_DIR}.bak.$(date +%Y%m%d-%H%M%S)"
+    log "Backing up ${INSTALL_DIR} -> ${BACKUP}"
+    mv "$INSTALL_DIR" "$BACKUP"
   fi
 
   mkdir -p "$(dirname "$INSTALL_DIR")"
-  tar -xzf "$tarball" -C "$tmp_dir"
-  [ -d "$tmp_dir/claw-companion" ] || { err "Release 包结构异常"; exit 1; }
-  mv "$tmp_dir/claw-companion" "$INSTALL_DIR"
+  tar -xzf "$TARBALL" -C "$TMP_DIR"
+  [ -d "$TMP_DIR/claw-companion" ] || { err "Release 包结构异常"; exit 1; }
+  mv "$TMP_DIR/claw-companion" "$INSTALL_DIR"
 
   [ -d "$INSTALL_DIR/server/node_modules" ] || { err "Release 包缺少 server/node_modules"; exit 1; }
 
-  node_path=$(command -v node)
+  NODE_PATH=$(command -v node)
   cat > "/etc/systemd/system/${SERVICE_NAME}.service" <<EOF
 [Unit]
 Description=Claw伴侣 - OpenClaw Web 管理面板
@@ -153,7 +153,7 @@ After=network.target
 
 [Service]
 Type=simple
-ExecStart=${node_path} ${INSTALL_DIR}/server/index.js
+ExecStart=${NODE_PATH} ${INSTALL_DIR}/server/index.js
 WorkingDirectory=${INSTALL_DIR}/server
 Environment=COMPANION_PORT=${COMPANION_PORT}
 Environment=PATH=/usr/local/bin:/usr/bin:/bin
@@ -171,8 +171,8 @@ EOF
   COMPANION_OK=1
   open_firewall_port "$COMPANION_PORT"
 
-  ip=$(get_primary_ip)
-  companion_ver=$(node -p "require('${INSTALL_DIR}/server/package.json').version" 2>/dev/null || echo "unknown")
+  IP=$(get_primary_ip)
+  COMPANION_VER=$(node -p "require('${INSTALL_DIR}/server/package.json').version" 2>/dev/null || echo "unknown")
 
   echo ""
   echo "╔════════════════════════════════════════════╗"
@@ -183,9 +183,9 @@ EOF
   printf "  %s 防火墙已放行 ${COMPANION_PORT}/tcp\n" "$( [ "$FIREWALL_OK" = 1 ] && echo '✅' || echo '⚠️' )"
   printf "  %s 已启用额外 swap\n" "$( [ "$SWAP_OK" = 1 ] && echo '✅' || echo 'ℹ️' )"
   echo ""
-  echo "  Claw伴侣版本:    ${companion_ver}"
+  echo "  Claw伴侣版本:    ${COMPANION_VER}"
   echo "  本机访问:        http://127.0.0.1:${COMPANION_PORT}"
-  echo "  局域网访问:      http://${ip}:${COMPANION_PORT}"
+  echo "  局域网访问:      http://${IP}:${COMPANION_PORT}"
   echo "  服务状态:        systemctl status ${SERVICE_NAME}"
   echo "  安装目录:        ${INSTALL_DIR}"
   echo ""

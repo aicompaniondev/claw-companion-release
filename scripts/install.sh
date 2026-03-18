@@ -8,27 +8,8 @@
 cd "$HOME" 2>/dev/null || cd / 2>/dev/null
 
 # ---- 自动获取最新脚本 ----
-if [ -z "$CLAW_FRESH" ]; then
-  FRESH_TMP="/tmp/claw-install-$$.sh"
-  # 多镜像源，兼容中国大陆网络
-  for _url in \
-    "https://cdn.jsdelivr.net/gh/aicompaniondev/claw-companion-release@main/scripts/install.sh" \
-    "https://raw.githubusercontent.com/aicompaniondev/claw-companion-release/main/scripts/install.sh" \
-    "https://raw.gitmirror.com/aicompaniondev/claw-companion-release/main/scripts/install.sh"; do
-    curl -fsSL --connect-timeout 5 "$_url" -o "$FRESH_TMP" 2>/dev/null && [ -s "$FRESH_TMP" ] && break
-    rm -f "$FRESH_TMP" 2>/dev/null
-  done
-  if [ -s "$FRESH_TMP" ]; then
-    export CLAW_FRESH=1
-    exec bash "$FRESH_TMP"
-  fi
-  rm -f "$FRESH_TMP" 2>/dev/null
-  # 如果所有源都失败，尝试用 git 更新本地官网来获取最新脚本
-  if [ -d "$HOME/.openclaw/site/.git" ]; then
-    cd "$HOME/.openclaw/site" && git pull < /dev/null >/dev/null 2>&1
-    cd "$HOME" 2>/dev/null
-  fi
-fi
+# 说明：为避免 CDN / 镜像缓存旧脚本导致安装链路跑回老版本，这里默认不再二次自更新。
+# 用户通过 raw.githubusercontent.com 拉取到的 install.sh 就视为当前执行版本。
 
 RED='\033[0;31m'; GREEN='\033[0;32m'; YELLOW='\033[1;33m'
 BLUE='\033[0;34m'; CYAN='\033[0;36m'; BOLD='\033[1m'; NC='\033[0m'
