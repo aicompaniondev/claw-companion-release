@@ -363,6 +363,7 @@ check_swap() {
 # ======================== 安装 OpenClaw ========================
 install_clawdbot() {
   step "安装 OpenClaw"
+  ensure_git
 
   if command -v openclaw &>/dev/null; then
     local ver
