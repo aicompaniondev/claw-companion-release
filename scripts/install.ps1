@@ -1,6 +1,6 @@
 # ============================================================
 # Claw伴侣 🐾 一键安装脚本 (Windows PowerShell)
-# 安装 Clawdbot + Claw伴侣 Web 管理面板
+# 安装 OpenClaw + Claw伴侣 Web 管理面板
 # ============================================================
 
 $ErrorActionPreference = "Stop"
@@ -18,7 +18,7 @@ function Write-Banner {
     Write-Host "  ╚██████╗███████╗██║  ██║╚███╔███╔╝" -ForegroundColor Cyan
     Write-Host "   ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝" -ForegroundColor Cyan
     Write-Host ""
-    Write-Host "  🐾 Claw伴侣 — Clawdbot 可视化管理面板" -ForegroundColor White
+    Write-Host "  🐾 Claw伴侣 — OpenClaw 可视化管理面板" -ForegroundColor White
     Write-Host "  一键部署，浏览器管理一切" -ForegroundColor DarkCyan
     Write-Host ""
 }
@@ -53,7 +53,7 @@ function Install-NodeJs {
             Write-Info "Node.js v$ver ✓"
             return
         }
-        Write-Warn "Node.js v$ver 版本过低，Clawdbot 需要 >= 22"
+        Write-Warn "Node.js v$ver 版本过低，OpenClaw 需要 >= 22"
     } else {
         Write-Warn "未检测到 Node.js"
     }
@@ -103,28 +103,28 @@ function Install-NodeJs {
     }
 }
 
-# ======================== 安装 Clawdbot ========================
+# ======================== 安装 OpenClaw ========================
 function Install-Clawdbot {
-    Write-Step "安装 Clawdbot (openclaw-cn)"
+    Write-Step "安装 OpenClaw"
 
-    $existing = Get-Command openclaw-cn -ErrorAction SilentlyContinue
+    $existing = Get-Command openclaw -ErrorAction SilentlyContinue
     if ($existing) {
-        $ver = (openclaw-cn --version 2>$null) ?? "?"
-        Write-Info "已安装 Clawdbot ($ver)，正在更新..."
+        $ver = (openclaw --version 2>$null) ?? "?"
+        Write-Info "已安装 OpenClaw ($ver)，正在更新..."
     }
 
     $env:SHARP_IGNORE_GLOBAL_LIBVIPS = "1"
-    npm install -g openclaw-cn@latest 2>&1 | Select-Object -Last 3
+    npm install -g openclaw@latest 2>&1 | Select-Object -Last 3
 
     # 刷新 PATH
     $env:Path = [System.Environment]::GetEnvironmentVariable("Path", "Machine") + ";" + [System.Environment]::GetEnvironmentVariable("Path", "User")
 
-    $clawdCmd = Get-Command openclaw-cn -ErrorAction SilentlyContinue
+    $clawdCmd = Get-Command openclaw -ErrorAction SilentlyContinue
     if ($clawdCmd) {
-        Write-Info "Clawdbot $(openclaw-cn --version 2>$null) ✓"
+        Write-Info "OpenClaw $(openclaw --version 2>$null) ✓"
     } else {
-        Write-Err "Clawdbot 安装失败"
-        Write-Host "  手动安装: npm install -g openclaw-cn@latest" -ForegroundColor Cyan
+        Write-Err "OpenClaw 安装失败"
+        Write-Host "  手动安装: npm install -g openclaw@latest" -ForegroundColor Cyan
         exit 1
     }
 }
@@ -223,7 +223,7 @@ function Show-Finish {
     Write-Host "  📖 接下来:" -ForegroundColor White
     Write-Host "  1. 在浏览器中配置 AI 模型和 API Key" -ForegroundColor Cyan
     Write-Host "  2. 添加消息渠道（钉钉、Telegram 等）" -ForegroundColor Cyan
-    Write-Host "  3. 一键启动 Clawdbot" -ForegroundColor Cyan
+    Write-Host "  3. 一键启动 OpenClaw" -ForegroundColor Cyan
     Write-Host ""
     Write-Host "  🔧 管理:" -ForegroundColor White
     Write-Host "  停止: schtasks /End /TN ClawCompanion" -ForegroundColor Cyan

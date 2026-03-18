@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
 # Claw伴侣 🐾 一键安装脚本 (macOS + Linux)
-# 安装 Clawdbot + Claw伴侣 Web 管理面板
+# 安装 OpenClaw + Claw伴侣 Web 管理面板
 # ============================================================
 
 # 修复 cwd 被删除的问题
@@ -48,7 +48,7 @@ banner() {
   echo "  ╚██████╗███████╗██║  ██║╚███╔███╔╝"
   echo "   ╚═════╝╚══════╝╚═╝  ╚═╝ ╚══╝╚══╝"
   echo -e "${NC}"
-  echo -e "  ${BOLD}🐾 Claw伴侣 — Clawdbot 可视化管理面板${NC}"
+  echo -e "  ${BOLD}🐾 Claw伴侣 — OpenClaw 可视化管理面板${NC}"
   echo -e "  ${CYAN}一键部署，浏览器管理一切${NC}"
   echo ""
 }
@@ -169,7 +169,7 @@ ensure_curl() {
 
 ensure_dbus() {
   if [ "$OS" = "linux" ] && ! command -v dbus-launch &>/dev/null; then
-    step "安装 dbus-launch (openclaw-cn 需要)"
+    step "安装 dbus-launch (openclaw 需要)"
     install_pkg dbus-x11
     if ! command -v dbus-launch &>/dev/null; then
       install_pkg dbus
@@ -360,14 +360,14 @@ check_swap() {
   fi
 }
 
-# ======================== 安装 Clawdbot ========================
+# ======================== 安装 OpenClaw ========================
 install_clawdbot() {
-  step "安装 Clawdbot (openclaw-cn)"
+  step "安装 OpenClaw"
 
-  if command -v openclaw-cn &>/dev/null; then
+  if command -v openclaw &>/dev/null; then
     local ver
-    ver=$(openclaw-cn --version 2>/dev/null || echo "?")
-    info "已安装 Clawdbot ($ver)，正在更新..."
+    ver=$(openclaw --version 2>/dev/null || echo "?")
+    info "已安装 OpenClaw ($ver)，正在更新..."
   fi
 
   step "正在下载安装（首次需要 3-10 分钟，请耐心等待）..."
@@ -375,20 +375,20 @@ install_clawdbot() {
   export NODE_OPTIONS="--max-old-space-size=1536"
   set_npm_mirror_env
 
-  npm --registry "$NPM_REGISTRY" install -g openclaw-cn@latest --prefer-offline --no-audit < /dev/null 2>&1 | tail -10
+  npm --registry "$NPM_REGISTRY" install -g openclaw@latest --prefer-offline --no-audit < /dev/null 2>&1 | tail -10
   hash -r 2>/dev/null || true
 
-  if ! command -v openclaw-cn &>/dev/null; then
+  if ! command -v openclaw &>/dev/null; then
     warn "首次安装失败，尝试降级安装..."
-    npm --registry "$NPM_REGISTRY" install -g openclaw-cn@latest --omit=optional --no-audit < /dev/null 2>&1 | tail -5
+    npm --registry "$NPM_REGISTRY" install -g openclaw@latest --omit=optional --no-audit < /dev/null 2>&1 | tail -5
     hash -r 2>/dev/null || true
   fi
 
-  if command -v openclaw-cn &>/dev/null; then
-    info "Clawdbot $(openclaw-cn --version 2>/dev/null) ✓"
+  if command -v openclaw &>/dev/null; then
+    info "OpenClaw $(openclaw --version 2>/dev/null) ✓"
   else
-    error "Clawdbot 安装失败，可能是内存不足或网络问题"
-    echo -e "  建议: ${CYAN}手动执行 npm install -g openclaw-cn@latest${NC}"
+    error "OpenClaw 安装失败，可能是内存不足或网络问题"
+    echo -e "  建议: ${CYAN}手动执行 npm install -g openclaw@latest${NC}"
     exit 1
   fi
 }
@@ -423,14 +423,14 @@ install_companion() {
 # ======================== 创建 Gateway 系统服务 ========================
 setup_gateway_service() {
   if [ "$OS" != "linux" ] || ! $IS_ROOT; then return 0; fi
-  if ! command -v openclaw-cn &>/dev/null; then return 0; fi
+  if ! command -v openclaw &>/dev/null; then return 0; fi
 
   step "配置 Gateway 系统服务"
   local GW_SERVICE="/etc/systemd/system/openclaw-gateway.service"
   local NODE_PATH
   NODE_PATH=$(which node)
   local OPENCLAW_PATH
-  OPENCLAW_PATH=$(which openclaw-cn)
+  OPENCLAW_PATH=$(which openclaw)
 
   systemctl stop openclaw-gateway.service 2>/dev/null || true
 
@@ -462,7 +462,7 @@ EOF
 # ======================== 配置 nginx Gateway 代理 ========================
 setup_nginx_gateway_proxy() {
   if [ "$OS" != "linux" ] || ! $IS_ROOT; then return 0; fi
-  if ! command -v openclaw-cn &>/dev/null; then return 0; fi
+  if ! command -v openclaw &>/dev/null; then return 0; fi
 
   step "配置 Gateway nginx 代理 (HTTPS 端口 18800)"
   local GW_PORT=18789 PROXY_PORT=18800
@@ -598,7 +598,7 @@ setup_systemd_system() {
 
   cat > "$SERVICE_FILE" <<EOF
 [Unit]
-Description=Claw伴侣 - Clawdbot Web 管理面板
+Description=Claw伴侣 - OpenClaw Web 管理面板
 After=network.target
 
 [Service]
@@ -635,7 +635,7 @@ setup_systemd_user() {
 
   cat > "$SERVICE_FILE" <<EOF
 [Unit]
-Description=Claw伴侣 - Clawdbot Web 管理面板
+Description=Claw伴侣 - OpenClaw Web 管理面板
 After=network.target
 
 [Service]
@@ -751,7 +751,7 @@ finish() {
   echo -e "  ${BOLD}📖 接下来:${NC}"
   echo -e "  ${CYAN}1.${NC} 在浏览器中配置 AI 模型和 API Key"
   echo -e "  ${CYAN}2.${NC} 添加消息渠道（钉钉、Telegram 等）"
-  echo -e "  ${CYAN}3.${NC} 一键启动 Clawdbot"
+  echo -e "  ${CYAN}3.${NC} 一键启动 OpenClaw"
   echo ""
   echo -e "  ${BOLD}🔧 管理命令:${NC}"
   if [ "$OS" = "macos" ]; then

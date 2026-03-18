@@ -73,7 +73,7 @@ NODE_PATH=$(which node)
 
 cat > /etc/systemd/system/claw-companion.service <<EOF
 [Unit]
-Description=Claw伴侣 - Clawdbot Web 管理面板
+Description=Claw伴侣 - OpenClaw Web 管理面板
 After=network.target
 
 [Service]
