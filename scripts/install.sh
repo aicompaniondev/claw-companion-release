@@ -433,6 +433,8 @@ setup_gateway_service() {
   local OPENCLAW_PATH
   OPENCLAW_PATH=$(which openclaw)
 
+  openclaw config set gateway.controlUi.dangerouslyAllowHostHeaderOriginFallback true >/dev/null 2>&1 || true
+
   systemctl stop openclaw-gateway.service 2>/dev/null || true
 
   cat > "$GW_SERVICE" <<EOF
