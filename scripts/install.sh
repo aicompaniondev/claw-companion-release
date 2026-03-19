@@ -746,10 +746,21 @@ finish() {
     echo -e "  公网:   ${CYAN}${BOLD}http://${PUBLIC_IP}:${COMPANION_PORT}${NC}"
   fi
   echo ""
+  local GW_TOKEN
+  GW_TOKEN=$(grep -o '"token"[[:space:]]*:[[:space:]]*"[^"]*"' "$HOME/.openclaw/openclaw.json" 2>/dev/null | head -1 | sed 's/.*"token"[[:space:]]*:[[:space:]]*"\([^"]*\)"/\1/' || true)
+  local DASH_SUFFIX=""
+  if [ -n "$GW_TOKEN" ] && [ "$GW_TOKEN" != "OPENCLAW_REDACTED" ]; then
+    DASH_SUFFIX="#token=${GW_TOKEN}"
+  fi
+
   echo -e "  ${BOLD}📖 OpenClaw 面板 (启动 Gateway 后):${NC}"
   if [ -n "$PUBLIC_IP" ]; then
-    echo -e "  ${CYAN}https://${PUBLIC_IP}:18800${NC} (首次需接受自签名证书)"
+    echo -e "  ${CYAN}https://${PUBLIC_IP}:18800/${DASH_SUFFIX}${NC} (首次需接受自签名证书)"
   fi
+  if [ -n "$LAN_IP" ]; then
+    echo -e "  ${CYAN}https://${LAN_IP}:18800/${DASH_SUFFIX}${NC} (局域网访问，首次需接受自签名证书)"
+  fi
+  echo -e "  ${CYAN}http://127.0.0.1:18789/${DASH_SUFFIX}${NC} (本机 Gateway 直连)"
   echo ""
   echo -e "  ${BOLD}📖 接下来:${NC}"
   echo -e "  ${CYAN}1.${NC} 在浏览器中配置 AI 模型和 API Key"
